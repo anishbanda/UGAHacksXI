@@ -27,7 +27,7 @@ This directly addresses the **Cox Automotive** challenge by using AI to optimize
 *(Type in 'Georgia Tech' to 'Piedmont Park')*
 Most GPS apps just give you the fastest route. LumenRoute calculates the **Eco-Impact**.
 
-We combine real-time traffic data, weather patterns from OpenWeatherMap, and current Air Quality Index (AQI) to generate routes that might be slightly slower but significantly greener.
+We combine real-time traffic data, weather patterns from OpenWeatherMap, and current Air Quality Index (AQI) to generate routes that might be slightly slower but significantly greener. We will use the locations of south branch chicago river and west cerak road
 
 *(Point to the result card)*
 See here—LumenRoute suggests this alternative path. It avoids the congestion we saw earlier, reducing idle time and cutting CO2 emissions by [X]%. This puts sustainability directly in the hands of the driver.
