@@ -1,10 +1,10 @@
-# LumenRoute AI
+# LumenRoute
 
 **Built for UGAHacks 11** | *Theme: Magic*
 
 ## About The Project
 
-LumenRoute AI transforms existing city infrastructure into an intelligent safety network. We built this platform during UGAHacks 11 to address two critical issues for Georgia commuters: traffic safety and environmental impact.
+LumenRoute transforms existing city infrastructure into an intelligent safety network. We built this platform during UGAHacks 11 to address two critical issues for Georgia commuters: traffic safety and environmental impact.
 
 By leveraging Google Gemini 1.5, we analyze live feeds from over 50 GDOT traffic cameras in real-time. This allows us to detect hazards like flooding, accidents, and debris faster than traditional reporting methods. We combine this visual data with environmental metrics to offer drivers "Eco-Routes"—paths optimized not just for speed, but for lower carbon emissions and higher safety scores.
 
@@ -17,10 +17,10 @@ By leveraging Google Gemini 1.5, we analyze live feeds from over 50 GDOT traffic
 
 ## Team Members
 
-- [Name] - [Role]
-- [Name] - [Role]
-- [Name] - [Role]
-- [Name] - [Role]
+- Anish Banda
+- Deep Sahu
+- Kedarnath Mohan
+- Shiv Pandey
 
 ## Tech Stack
 

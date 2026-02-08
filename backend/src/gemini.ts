@@ -250,7 +250,7 @@ export async function generateRouteRecommendation(
     source: h.source,
   }));
 
-  const prompt = `You are LumenRoute AI, an intelligent commute advisor for Atlanta, Georgia. Based on the following real-time data, recommend the best route. Factor in hazard avoidance, air quality, and carbon emissions.
+  const prompt = `You are LumenRoute, an intelligent commute advisor for Atlanta, Georgia. Based on the following real-time data, recommend the best route. Factor in hazard avoidance, air quality, and carbon emissions.
 
 Available Routes (with per-route hazard and emission data):
 ${JSON.stringify(routeSummary, null, 2)}

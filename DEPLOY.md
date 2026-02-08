@@ -1,4 +1,4 @@
-# Deploying LumenRoute AI to DigitalOcean
+# Deploying LumenRoute to DigitalOcean
 
 There are two recommended ways to deploy this application:
 1.  **Dropet (Virtual Machine) with Docker Compose** (Recommended for Hackathons)

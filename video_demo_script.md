@@ -1,4 +1,4 @@
-# LumenRoute AI - 5 Minute Demo Script
+# LumenRoute - 5 Minute Demo Script
 **Targeting:** Cox Automotive (Sustainability/Georgia), State Farm (Community Impact), Google Gemini (Best Use)
 
 ## 0:00 - 0:45 | The Problem & The Hook
@@ -7,7 +7,7 @@
 
 We asked: **What if we could use the existing infrastructure to make our roads safer *and* greener?**
 
-Introducing **LumenRoute AI**. We've built a smart commute intelligence platform from scratch that leverages Multimodal AI to transform Georgia's Department of Transportation (GDOT) cameras into a real-time Guardian network."
+Introducing **LumenRoute**. We've built a smart commute intelligence platform from scratch that leverages Multimodal AI to transform Georgia's Department of Transportation (GDOT) cameras into a real-time Guardian network."
 
 ## 0:45 - 2:00 | Feature 1: Guardian Dashboard (The "Magic")
 *(Screen Share: Navigate to Guardian Tab)*
@@ -56,8 +56,8 @@ We used **Google Gemini** not just as a chatbot, but as a multimodal reasoning e
 4.  **Real-time adaptation** to changing weather and traffic conditions.
 
 ## 4:45 - 5:15 | Conclusion
-"LumenRoute AI turns passive infrastructure into active intelligence. We're helping Georgia drivers avoid accidents, reducing local carbon emissions, and empowering communities to fix their own neighborhoods.
+"LumenRoute turns passive infrastructure into active intelligence. We're helping Georgia drivers avoid accidents, reducing local carbon emissions, and empowering communities to fix their own neighborhoods.
 
 This isn't just about getting from point A to point B. It's about how we get there together—safer, cleaner, and smarter.
 
-We're LumenRoute AI, illuminating the road ahead. Thank you."
+We're LumenRoute, illuminating the road ahead. Thank you."

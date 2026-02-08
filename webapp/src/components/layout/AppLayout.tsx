@@ -92,7 +92,7 @@ export function AppLayout() {
           <LayoutGrid className="w-5 h-5 flex-shrink-0" />
           {sidebarExpanded && (
             <span className="text-sm font-bold text-foreground tracking-tight whitespace-nowrap">
-              LumenRoute AI
+              LumenRoute
             </span>
           )}
         </button>
@@ -206,7 +206,7 @@ export function AppLayout() {
             </div>
             <div className="flex flex-col">
               <span className="text-lg font-bold text-foreground tracking-tight">
-                LumenRoute AI
+                LumenRoute
               </span>
               <span className="text-[10px] font-medium text-primary/80 tracking-wider uppercase">
                 Smart Commute
