@@ -1,0 +1,13 @@
+This is a TypeScript/JavaScript project (React + Bun).
+
+Please refer to the following files for dependencies:
+- Root: package.json
+- Backend: backend/package.json
+- Frontend: webapp/package.json
+
+To install dependencies:
+1. Ensure you have Bun (https://bun.sh) and Node.js installed.
+2. Run `bun install` in the root directory.
+
+OR use Docker:
+1. docker-compose up --build
