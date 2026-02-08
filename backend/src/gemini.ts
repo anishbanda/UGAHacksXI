@@ -360,5 +360,6 @@ Be fair but accurate. If the image clearly shows the reported issue, verify it. 
  * Check if Gemini API is configured
  */
 export function isGeminiConfigured(): boolean {
+  if (process.env.DEMO_MODE === "true") return false;
   return !!process.env.GEMINI_API_KEY?.trim();
 }

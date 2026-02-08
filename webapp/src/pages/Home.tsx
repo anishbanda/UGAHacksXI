@@ -234,7 +234,7 @@ export default function Home() {
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-8">
               <Leaf className="w-4 h-4 text-primary" />
               <span className="text-sm font-medium text-primary">
-                Atlanta's Smart Commute Platform
+                Georgia's Smart Commute Platform
               </span>
             </div>
           </div>
@@ -243,9 +243,8 @@ export default function Home() {
             className="text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold text-foreground mb-6 tracking-tight animate-fade-in-up"
             style={{ animationDelay: "100ms" }}
           >
-            <span className="text-primary text-shiny-green">Green</span>Commute
-            <br />
-            <span className="text-muted-foreground/60">ATL</span>
+            <span className="text-foreground">Lumen</span>
+            <span className="text-primary text-shiny-green">Route</span>
           </h1>
 
           <p

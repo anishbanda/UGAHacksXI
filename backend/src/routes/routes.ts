@@ -72,6 +72,10 @@ async function fetchGoogleDirections(
     waypoints?: LatLng[];
   } = {}
 ): Promise<GoogleDirectionsResponse> {
+  if (process.env.DEMO_MODE === "true") {
+    throw new Error("Demo Mode enabled - using mock routes");
+  }
+
   const apiKey = process.env.GOOGLE_MAPS_API_KEY;
   if (!apiKey) {
     throw new Error("GOOGLE_MAPS_API_KEY is not configured");
