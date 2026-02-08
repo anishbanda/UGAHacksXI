@@ -1,13 +1,16 @@
 import { useEffect, useRef, useMemo } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import type { Camera } from "../../../../backend/src/types";
+import type { Camera, CommunityReport, ReportType } from "../../../../backend/src/types";
 import { cn } from "@/lib/utils";
 
 interface MapContainerProps {
   cameras: Camera[];
+  reports?: CommunityReport[];
   selectedCamera: Camera | null;
+  selectedReport?: CommunityReport | null;
   onSelectCamera: (camera: Camera) => void;
+  onSelectReport?: (report: CommunityReport) => void;
   className?: string;
 }
 
@@ -34,6 +37,76 @@ const hazardIcons: Record<string, string> = {
   Weather: `<path d="M20 17H4M12 3v2m6.36 1.64l-1.41 1.41M21 12h-2M17.95 17.95l-1.41-1.41M12 21v-2M6.05 17.95l1.41-1.41M3 12h2M6.64 6.64l1.41 1.41" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round"/>`,
   Clear: `<path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`,
 };
+
+// Report type → marker colors (distinct from camera hazard colors)
+const reportColors: Record<ReportType, { fill: string; stroke: string }> = {
+  broken_charger: { fill: "#f59e0b", stroke: "#d97706" },
+  blocked_bike_lane: { fill: "#6366f1", stroke: "#4f46e5" },
+  pothole: { fill: "#78716c", stroke: "#57534e" },
+  flooding: { fill: "#38bdf8", stroke: "#0284c7" },
+  obstruction: { fill: "#f97316", stroke: "#ea580c" },
+  other: { fill: "#a1a1aa", stroke: "#71717a" },
+};
+
+// SVG icons for each report type
+const reportIcons: Record<ReportType, string> = {
+  broken_charger: `<path d="M13 2L3 14h9l-1 10 10-12h-9l1-10z" fill="white" stroke="white" stroke-width="0.5"/>`,
+  blocked_bike_lane: `<circle cx="5" cy="18" r="3" fill="none" stroke="white" stroke-width="1.5"/><circle cx="19" cy="18" r="3" fill="none" stroke="white" stroke-width="1.5"/><path d="M12 18V6m-3 6l3-6 3 6" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`,
+  pothole: `<circle cx="12" cy="12" r="8" fill="none" stroke="white" stroke-width="1.5"/><circle cx="12" cy="12" r="3" fill="white"/>`,
+  flooding: `<path d="M12 2v6m0 0l-4 4m4-4l4 4M6 18h12" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"/>`,
+  obstruction: `<path d="M12 9v4m0 4h.01M12 3l9 18H3z" fill="none" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>`,
+  other: `<circle cx="12" cy="12" r="1" fill="white"/><circle cx="8" cy="12" r="1" fill="white"/><circle cx="16" cy="12" r="1" fill="white"/>`,
+};
+
+// Report type labels for tooltips
+const reportTypeLabels: Record<ReportType, string> = {
+  broken_charger: "Broken EV Charger",
+  blocked_bike_lane: "Blocked Bike Lane",
+  pothole: "Pothole",
+  flooding: "Flooding",
+  obstruction: "Obstruction",
+  other: "Other Issue",
+};
+
+function createReportMarkerIcon(report: CommunityReport, isSelected: boolean): L.DivIcon {
+  const colors = reportColors[report.type] || reportColors.other;
+  const iconSvg = reportIcons[report.type] || reportIcons.other;
+
+  const size = isSelected ? 38 : 30;
+  const selectedRing = isSelected
+    ? `<div style="position:absolute;inset:-4px;border-radius:6px;border:2px solid #a3e635;box-shadow:0 0 8px #a3e63580;"></div>`
+    : "";
+
+  // Diamond/rounded-square shape to distinguish from camera circles
+  const html = `
+    <div style="position:relative;width:${size}px;height:${size}px;">
+      ${selectedRing}
+      <div style="
+        width:${size}px;height:${size}px;border-radius:6px;
+        background:${colors.fill};border:2px solid ${colors.stroke};
+        display:flex;align-items:center;justify-content:center;
+        box-shadow:0 2px 8px ${colors.fill}80;
+        cursor:pointer;transition:transform 0.2s;
+        transform:rotate(0deg);
+      ">
+        <svg viewBox="0 0 24 24" width="${size * 0.5}" height="${size * 0.5}" style="filter:drop-shadow(0 1px 1px rgba(0,0,0,0.3));">
+          ${iconSvg}
+        </svg>
+      </div>
+      ${report.verifiedByAi ? `<div style="position:absolute;top:-4px;right:-4px;width:14px;height:14px;border-radius:50%;background:#22c55e;border:2px solid #15803d;display:flex;align-items:center;justify-content:center;">
+        <svg viewBox="0 0 24 24" width="8" height="8"><path d="M20 6L9 17l-5-5" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>` : ""}
+    </div>
+  `;
+
+  return L.divIcon({
+    html,
+    className: "leaflet-report-marker",
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -size / 2],
+  });
+}
 
 function createMarkerIcon(camera: Camera, isSelected: boolean): L.DivIcon {
   const type = camera.currentStatus.type;
@@ -78,17 +151,30 @@ function createMarkerIcon(camera: Camera, isSelected: boolean): L.DivIcon {
 
 export function MapContainer({
   cameras,
+  reports = [],
   selectedCamera,
+  selectedReport,
   onSelectCamera,
+  onSelectReport,
   className,
 }: MapContainerProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<Map<string, L.Marker>>(new Map());
+  const reportMarkersRef = useRef<Map<string, L.Marker>>(new Map());
 
-  // Compute bounds from camera data
+  // Compute bounds from camera + report data
   const bounds = useMemo(() => {
-    if (cameras.length === 0) {
+    const allLats = [
+      ...cameras.map((c) => c.lat),
+      ...reports.map((r) => r.lat),
+    ];
+    const allLngs = [
+      ...cameras.map((c) => c.lng),
+      ...reports.map((r) => r.lng),
+    ];
+
+    if (allLats.length === 0) {
       // Default to Atlanta center
       return {
         center: [33.749, -84.388] as [number, number],
@@ -96,18 +182,16 @@ export function MapContainer({
       };
     }
 
-    const lats = cameras.map((c) => c.lat);
-    const lngs = cameras.map((c) => c.lng);
-    const minLat = Math.min(...lats);
-    const maxLat = Math.max(...lats);
-    const minLng = Math.min(...lngs);
-    const maxLng = Math.max(...lngs);
+    const minLat = Math.min(...allLats);
+    const maxLat = Math.max(...allLats);
+    const minLng = Math.min(...allLngs);
+    const maxLng = Math.max(...allLngs);
 
     return {
       center: [(minLat + maxLat) / 2, (minLng + maxLng) / 2] as [number, number],
       bounds: L.latLngBounds([minLat - 0.02, minLng - 0.02], [maxLat + 0.02, maxLng + 0.02]),
     };
-  }, [cameras]);
+  }, [cameras, reports]);
 
   // Initialize map
   useEffect(() => {
@@ -160,7 +244,11 @@ export function MapContainer({
   const onSelectCameraRef = useRef(onSelectCamera);
   onSelectCameraRef.current = onSelectCamera;
 
-  // Sync markers with camera data
+  // Handle report selection callback
+  const onSelectReportRef = useRef(onSelectReport);
+  onSelectReportRef.current = onSelectReport;
+
+  // Sync camera markers with camera data
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -222,6 +310,67 @@ export function MapContainer({
     }
   }, [cameras, selectedCamera]);
 
+  // Sync report markers with report data
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const currentMarkers = reportMarkersRef.current;
+    const newReportIds = new Set(reports.map((r) => r.reportId));
+
+    // Remove markers for reports no longer in the list
+    for (const [reportId, marker] of currentMarkers) {
+      if (!newReportIds.has(reportId)) {
+        map.removeLayer(marker);
+        currentMarkers.delete(reportId);
+      }
+    }
+
+    // Add or update report markers
+    for (const report of reports) {
+      const isSelected = selectedReport?.reportId === report.reportId;
+      const icon = createReportMarkerIcon(report, isSelected);
+      const existingMarker = currentMarkers.get(report.reportId);
+      const label = reportTypeLabels[report.type] || "Report";
+
+      if (existingMarker) {
+        existingMarker.setLatLng([report.lat, report.lng]);
+        existingMarker.setIcon(icon);
+      } else {
+        const marker = L.marker([report.lat, report.lng], { icon })
+          .addTo(map);
+
+        // Bind tooltip
+        marker.bindTooltip(
+          `<div style="font-weight:600;font-size:12px;max-width:200px;">${label}</div>
+           <div style="font-size:11px;color:#888;margin-top:2px;">Scout Report${
+            report.verifiedByAi ? " — AI Verified" : " — Pending Review"
+          }</div>`,
+          {
+            direction: "top",
+            offset: [0, -18],
+            className: "leaflet-camera-tooltip",
+          }
+        );
+
+        // Store report reference for click handling
+        (marker as any)._reportData = report;
+        marker.on("click", () => {
+          const rpt = (marker as any)._reportData;
+          if (rpt && onSelectReportRef.current) onSelectReportRef.current(rpt);
+        });
+
+        currentMarkers.set(report.reportId, marker);
+      }
+
+      // Update stored report data reference
+      const marker = currentMarkers.get(report.reportId);
+      if (marker) {
+        (marker as any)._reportData = report;
+      }
+    }
+  }, [reports, selectedReport]);
+
   // Pan to selected camera
   useEffect(() => {
     if (!mapRef.current || !selectedCamera) return;
@@ -230,6 +379,15 @@ export function MapContainer({
       duration: 0.5,
     });
   }, [selectedCamera]);
+
+  // Pan to selected report
+  useEffect(() => {
+    if (!mapRef.current || !selectedReport) return;
+    mapRef.current.setView([selectedReport.lat, selectedReport.lng], 15, {
+      animate: true,
+      duration: 0.5,
+    });
+  }, [selectedReport]);
 
   return (
     <div
@@ -242,11 +400,13 @@ export function MapContainer({
       <div ref={mapContainerRef} className="absolute inset-0 z-0" />
       {/* Inject custom styles for markers */}
       <style>{`
-        .leaflet-camera-marker {
+        .leaflet-camera-marker,
+        .leaflet-report-marker {
           background: transparent !important;
           border: none !important;
         }
-        .leaflet-camera-marker:hover > div > div:last-child {
+        .leaflet-camera-marker:hover > div > div:last-child,
+        .leaflet-report-marker:hover > div > div:nth-child(2) {
           transform: scale(1.15);
         }
         .leaflet-camera-tooltip {

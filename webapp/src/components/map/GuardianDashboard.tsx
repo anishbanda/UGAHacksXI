@@ -9,10 +9,25 @@ import {
   ChevronUp,
   ChevronDown,
   X,
+  Binoculars,
+  Sparkles,
+  MapPin,
+  Clock,
+  Zap,
+  Bike,
+  Circle,
+  Droplets,
+  MoreHorizontal,
 } from "lucide-react";
-import type { Camera as CameraType, HazardType } from "../../../../backend/src/types";
+import type {
+  Camera as CameraType,
+  HazardType,
+  CommunityReport,
+  ReportType,
+} from "../../../../backend/src/types";
 import { cn } from "@/lib/utils";
 import { useCameras, useCameraStats } from "@/hooks/useCameras";
+import { useReports } from "@/hooks/useReports";
 import { MapContainer } from "./MapContainer";
 import { HazardCard, HazardCardCompact } from "./HazardCard";
 import { HazardMarkerLegend } from "./HazardMarker";
@@ -29,6 +44,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useIsMobile } from "@/hooks/use-mobile";
 
+// Report type config for display in the dashboard
+const reportTypeConfig: Record<
+  ReportType,
+  { label: string; icon: typeof Zap; color: string; bgColor: string }
+> = {
+  broken_charger: { label: "Broken EV Charger", icon: Zap, color: "text-amber-400", bgColor: "bg-amber-400/10" },
+  blocked_bike_lane: { label: "Blocked Bike Lane", icon: Bike, color: "text-indigo-400", bgColor: "bg-indigo-400/10" },
+  pothole: { label: "Pothole", icon: Circle, color: "text-stone-400", bgColor: "bg-stone-400/10" },
+  flooding: { label: "Flooding", icon: Droplets, color: "text-sky-400", bgColor: "bg-sky-400/10" },
+  obstruction: { label: "Obstruction", icon: AlertTriangle, color: "text-orange-400", bgColor: "bg-orange-400/10" },
+  other: { label: "Other Issue", icon: MoreHorizontal, color: "text-zinc-400", bgColor: "bg-zinc-400/10" },
+};
+
 const ALL_HAZARD_TYPES: HazardType[] = [
   "Fire",
   "Flood",
@@ -42,12 +70,15 @@ const ALL_HAZARD_TYPES: HazardType[] = [
 
 export function GuardianDashboard() {
   const { data: cameras, isLoading, error, refetch, isFetching } = useCameras();
+  const { data: verifiedReports, isLoading: reportsLoading } = useReports("verified");
   const stats = useCameraStats(cameras);
   const isMobile = useIsMobile();
 
   const [selectedCamera, setSelectedCamera] = useState<CameraType | null>(null);
+  const [selectedReport, setSelectedReport] = useState<CommunityReport | null>(null);
   const [filterTypes, setFilterTypes] = useState<HazardType[]>([]);
   const [showHazardsOnly, setShowHazardsOnly] = useState(false);
+  const [showReports, setShowReports] = useState(true);
   const [mobileListExpanded, setMobileListExpanded] = useState(false);
 
   const filteredCameras = useMemo(() => {
@@ -84,11 +115,18 @@ export function GuardianDashboard() {
   };
 
   const handleCameraSelect = (camera: CameraType) => {
+    setSelectedReport(null);
     setSelectedCamera(camera);
+  };
+
+  const handleReportSelect = (report: CommunityReport) => {
+    setSelectedCamera(null);
+    setSelectedReport(report);
   };
 
   const handleCloseDetail = () => {
     setSelectedCamera(null);
+    setSelectedReport(null);
   };
 
   if (error) {
@@ -140,6 +178,13 @@ export function GuardianDashboard() {
               variant="warning"
             />
             <StatBadge
+              icon={Binoculars}
+              label="Scout Reports"
+              value={verifiedReports?.length ?? 0}
+              loading={reportsLoading}
+              variant="success"
+            />
+            <StatBadge
               icon={CheckCircle}
               label="Clear"
               value={stats.clearRoutes}
@@ -173,10 +218,10 @@ export function GuardianDashboard() {
             variant="warning"
           />
           <StatBadge
-            icon={CheckCircle}
-            label="Clear"
-            value={stats.clearRoutes}
-            loading={isLoading}
+            icon={Binoculars}
+            label="Reports"
+            value={verifiedReports?.length ?? 0}
+            loading={reportsLoading}
             variant="success"
           />
         </div>
@@ -191,8 +236,11 @@ export function GuardianDashboard() {
           ) : (
             <MapContainer
               cameras={filteredCameras}
+              reports={showReports ? verifiedReports ?? [] : []}
               selectedCamera={selectedCamera}
+              selectedReport={selectedReport}
               onSelectCamera={handleCameraSelect}
+              onSelectReport={handleReportSelect}
             />
           )}
 
@@ -239,6 +287,24 @@ export function GuardianDashboard() {
               <AlertTriangle className="w-4 h-4 mr-2" />
               Hazards Only
             </Button>
+
+            <Button
+              variant={showReports ? "default" : "secondary"}
+              size="sm"
+              onClick={() => setShowReports(!showReports)}
+              className={cn(
+                "bg-card/90 backdrop-blur-sm border border-border/50",
+                showReports && "bg-emerald-600/90 border-emerald-500/50 text-white"
+              )}
+            >
+              <Binoculars className="w-4 h-4 mr-2" />
+              Scout Reports
+              {verifiedReports && verifiedReports.length > 0 && (
+                <Badge variant="secondary" className="ml-2 px-1.5 py-0 text-xs">
+                  {verifiedReports.length}
+                </Badge>
+              )}
+            </Button>
           </div>
 
           {/* Legend - Desktop */}
@@ -258,6 +324,27 @@ export function GuardianDashboard() {
           </div>
           <ScrollArea className="flex-1">
             <div className="p-3 space-y-2">
+              {/* Verified Scout Reports Section */}
+              {showReports && verifiedReports && verifiedReports.length > 0 && (
+                <>
+                  <div className="flex items-center gap-2 px-1 pt-1 pb-2">
+                    <Binoculars className="w-4 h-4 text-emerald-400" />
+                    <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">
+                      Scout Reports ({verifiedReports.length})
+                    </span>
+                  </div>
+                  {verifiedReports.map((report) => (
+                    <ReportCardCompact
+                      key={report.reportId}
+                      report={report}
+                      onClick={() => handleReportSelect(report)}
+                    />
+                  ))}
+                  <div className="border-t border-border/50 my-2" />
+                </>
+              )}
+
+              {/* Camera Feed */}
               {isLoading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <Skeleton key={i} className="h-20 w-full rounded-lg" />
@@ -288,6 +375,9 @@ export function GuardianDashboard() {
             >
               <span className="font-medium text-foreground">
                 {filteredCameras.length} Cameras
+                {showReports && verifiedReports && verifiedReports.length > 0
+                  ? ` · ${verifiedReports.length} Reports`
+                  : ""}
               </span>
               {mobileListExpanded ? (
                 <ChevronDown className="w-5 h-5 text-muted-foreground" />
@@ -303,6 +393,28 @@ export function GuardianDashboard() {
             >
               <ScrollArea className="h-[40vh]">
                 <div className="p-3 space-y-2">
+                  {/* Verified Scout Reports */}
+                  {showReports && verifiedReports && verifiedReports.length > 0 && (
+                    <>
+                      <div className="flex items-center gap-2 px-1 pb-1">
+                        <Binoculars className="w-3.5 h-3.5 text-emerald-400" />
+                        <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">
+                          Scout Reports
+                        </span>
+                      </div>
+                      {verifiedReports.map((report) => (
+                        <ReportCardCompact
+                          key={report.reportId}
+                          report={report}
+                          onClick={() => {
+                            handleReportSelect(report);
+                            setMobileListExpanded(false);
+                          }}
+                        />
+                      ))}
+                      <div className="border-t border-border/50 my-2" />
+                    </>
+                  )}
                   {filteredCameras.map((camera) => (
                     <HazardCardCompact
                       key={camera.camId}
@@ -341,7 +453,170 @@ export function GuardianDashboard() {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Report Detail Sheet */}
+      <Sheet open={!!selectedReport} onOpenChange={(open) => !open && handleCloseDetail()}>
+        <SheetContent side={isMobile ? "bottom" : "right"} className="p-0 sm:max-w-md">
+          <SheetHeader className="p-4 pb-0">
+            <div className="flex items-center justify-between">
+              <SheetTitle className="text-foreground flex items-center gap-2">
+                <Binoculars className="w-5 h-5 text-emerald-400" />
+                Scout Report
+              </SheetTitle>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleCloseDetail}
+                className="h-8 w-8"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </SheetHeader>
+          <div className="p-4">
+            {selectedReport && <ReportDetailCard report={selectedReport} />}
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
+  );
+}
+
+/** Detail card shown in the sheet when a report marker is clicked */
+function ReportDetailCard({ report }: { report: CommunityReport }) {
+  const config = reportTypeConfig[report.type] || reportTypeConfig.other;
+  const Icon = config.icon;
+
+  function formatRelativeTime(dateString: string): string {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+    if (diffInSeconds < 60) return "Just now";
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
+    return `${Math.floor(diffInSeconds / 86400)}d ago`;
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-start gap-3">
+        <div className={cn("flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center", config.bgColor)}>
+          <Icon className={cn("w-6 h-6", config.color)} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-foreground text-lg">{config.label}</h3>
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground mt-0.5">
+            <MapPin className="w-3.5 h-3.5" />
+            <span>{report.lat.toFixed(4)}, {report.lng.toFixed(4)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* AI Verification Badge */}
+      <div className={cn(
+        "rounded-lg p-4",
+        report.verifiedByAi
+          ? "bg-emerald-500/10 border border-emerald-500/30"
+          : "bg-amber-500/10 border border-amber-500/30"
+      )}>
+        <div className="flex items-start gap-3">
+          {report.verifiedByAi ? (
+            <Sparkles className="h-5 w-5 text-emerald-400 shrink-0 mt-0.5" />
+          ) : (
+            <AlertTriangle className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
+          )}
+          <div className="space-y-1">
+            <p className={cn(
+              "font-medium text-sm",
+              report.verifiedByAi ? "text-emerald-400" : "text-amber-400"
+            )}>
+              {report.verifiedByAi ? "AI Verified" : "Pending Review"}
+            </p>
+            {report.aiExplanation && (
+              <p className="text-sm text-foreground/80 leading-relaxed">
+                {report.aiExplanation}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Description */}
+      {report.description && (
+        <div className="space-y-1.5">
+          <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
+            Description
+          </p>
+          <p className="text-sm text-foreground/90 leading-relaxed">
+            {report.description}
+          </p>
+        </div>
+      )}
+
+      {/* Status */}
+      <div className="flex items-center gap-2">
+        <Badge
+          className={cn(
+            "border",
+            report.status === "verified" && "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+            report.status === "pending" && "bg-amber-500/20 text-amber-400 border-amber-500/30",
+            report.status === "resolved" && "bg-zinc-500/20 text-zinc-400 border-zinc-500/30"
+          )}
+        >
+          {report.status.charAt(0).toUpperCase() + report.status.slice(1)}
+        </Badge>
+      </div>
+
+      {/* Timestamp */}
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground pt-2 border-t border-border/50">
+        <Clock className="w-3 h-3" />
+        <span>Reported {formatRelativeTime(report.timestamp)}</span>
+      </div>
+    </div>
+  );
+}
+
+/** Compact report card for sidebar list */
+function ReportCardCompact({ report, onClick }: { report: CommunityReport; onClick?: () => void }) {
+  const config = reportTypeConfig[report.type] || reportTypeConfig.other;
+  const Icon = config.icon;
+
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        "w-full p-3 rounded-lg border border-border/50 bg-card/50 backdrop-blur-sm",
+        "flex items-center gap-3 text-left transition-all duration-200",
+        "hover:bg-card hover:border-border"
+      )}
+    >
+      <div className={cn("flex-shrink-0 w-9 h-9 rounded-md flex items-center justify-center", config.bgColor)}>
+        <Icon className={cn("w-4 h-4", config.color)} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="font-medium text-sm text-foreground truncate">{config.label}</span>
+          {report.verifiedByAi && (
+            <Sparkles className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+          )}
+        </div>
+        <div className="flex items-center gap-2 mt-0.5">
+          <span className="text-xs text-muted-foreground truncate">
+            {report.lat.toFixed(3)}, {report.lng.toFixed(3)}
+          </span>
+          <Badge
+            className={cn(
+              "text-[10px] px-1.5 py-0 border",
+              report.status === "verified" && "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+              report.status === "pending" && "bg-amber-500/20 text-amber-400 border-amber-500/30",
+            )}
+          >
+            {report.status === "verified" ? "Verified" : "Pending"}
+          </Badge>
+        </div>
+      </div>
+    </button>
   );
 }
 
